@@ -1,15 +1,26 @@
-import { ChatInputCommandInteraction, Client } from "discord.js";
+import { ApplicationIntegrationType, ChatInputCommandInteraction, Client, InteractionContextType, SlashCommandBuilder } from "discord.js";
 
-export default {
-  name: "hello",
-  description: "Replies with hello!",
-  // devOnly: Boolean,
-  // testOnly: Boolean,
-  // options: Object[],
-  // deleted: Boolean,
-  // permissionsRequired,
-  // botPermissions,
-  callback: async (client: Client, interaction: ChatInputCommandInteraction) => {
-    interaction.reply(`Hello, ${interaction.user.username}!`);
-  }
+const data = new SlashCommandBuilder()
+  .setName("hello")
+  .setDescription("Replies with hello!")
+  .setIntegrationTypes(
+    ApplicationIntegrationType.GuildInstall,
+    ApplicationIntegrationType.UserInstall
+  )
+  .setContexts(
+    InteractionContextType.Guild,
+    InteractionContextType.BotDM,
+    InteractionContextType.PrivateChannel
+  )
+
+async function run(client: Client, interaction: ChatInputCommandInteraction) {
+  interaction.reply(`Hello, ${interaction.user}!`);
+}
+
+export default { 
+  data,
+  run,
+  // deleted: true,
+  // devOnly: true,
+  // testOnly: true
 }

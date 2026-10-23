@@ -1,40 +1,38 @@
-import { ApplicationCommandOptionType, ChatInputCommandInteraction, Client } from "discord.js";
+import { ApplicationIntegrationType, ChatInputCommandInteraction, Client, InteractionContextType, SlashCommandBuilder } from "discord.js";
 
-export default {
-  name: "add",
-  description: "Add 2 numbers",
-  options: [
-    {
-      name: "first-number",
-      description: "The first number.",
-      type: ApplicationCommandOptionType.Number,
-      choices: [
-        {
-          name: "one",
-          value: 1,
-        },
-        {
-          name: "two",
-          value: 2,
-        },
-        {
-          name: "three",
-          value: 3,
-        },
-      ],
-      required: true,
-    },
-    {
-      name: "second-number",
-      description: "The second number.",
-      type: ApplicationCommandOptionType.Number,
-      required: true,
-    },
-  ],
-  callback: async (client: Client, interaction: ChatInputCommandInteraction) => {
-    const num1 = interaction.options.getNumber("first-number") ?? 0;
-    const num2 = interaction.options.getNumber("second-number") ?? 0;
+const data = new SlashCommandBuilder()
+  .setName("add")
+  .setDescription("Add 2 numbers")
+  .setIntegrationTypes(
+    ApplicationIntegrationType.GuildInstall,
+    ApplicationIntegrationType.UserInstall
+  )
+  .setContexts(
+    InteractionContextType.Guild,
+    InteractionContextType.BotDM,
+    InteractionContextType.PrivateChannel
+  )
+  .addNumberOption((option) =>
+    option
+      .setName("first-number")
+      .setDescription("The first number")
+      .setRequired(true)
+  )
+  .addNumberOption((option) =>
+    option
+      .setName("second-number")
+      .setDescription("The second number")
+      .setRequired(true)
+  )
 
-    interaction.reply(`${num1+num2}`);
-  }
-};
+async function run(client: Client, interaction: ChatInputCommandInteraction) {
+  const num1 = interaction.options.getNumber("first-number", true) ?? 0;
+  const num2 = interaction.options.getNumber("second-number", true) ?? 0;
+
+  interaction.reply(`${num1+num2}`);
+}
+
+export default { 
+  data,
+  run,
+}

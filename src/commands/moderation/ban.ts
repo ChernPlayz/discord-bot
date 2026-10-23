@@ -1,82 +1,81 @@
-import { ApplicationCommandOptionType, ChatInputCommandInteraction, Client, Interaction, PermissionFlagsBits } from "discord.js";
+import { ApplicationIntegrationType, ChatInputCommandInteraction, Client, InteractionContextType, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 
-export default {
-  /**
-   * @param {Client} client
-   * @param {Interaction} interaction
-   */
-  callback: async (client: Client, interaction: ChatInputCommandInteraction) => {
-    const targetMemberInput = interaction.options.getUser("member");
-    const reason = interaction.options.getString("reason") || "No reason provided";
-    
-    if (!targetMemberInput) {
-      await interaction.reply({
-        content: "Please provide a valid user to ban.", 
-        ephemeral: true
-      });
-      return;
-    }
+const data = new SlashCommandBuilder()
+  .setName("ban")
+  .setDescription("Bans a member from the server")
+  .setIntegrationTypes(
+    ApplicationIntegrationType.GuildInstall
+  )
+  .setContexts(
+    InteractionContextType.Guild
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+  .addUserOption((option) =>
+    option
+      .setName("member")
+      .setDescription("The member to ban")
+      .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName("reason")
+      .setDescription("The reason for banning")
+  )
 
-    await interaction.deferReply({ ephemeral: true });
+async function run(client: Client, interaction: ChatInputCommandInteraction) {
+  const targetMemberInput = interaction.options.getUser("member", true);
+  const reason = interaction.options.getString("reason") || "No reason provided";
+  
+  if (!targetMemberInput) {
+    await interaction.reply({
+      content: "Please provide a valid user to ban.", 
+      flags: [MessageFlags.Ephemeral]
+    });
+    return;
+  }
 
-    const targetMember = await interaction.guild?.members.fetch(targetMemberInput.id);
+  await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-    if (!targetMember) {
-      await interaction.editReply("That user doesn't exit in this server.");
-      return;
-    }
+  const targetMember = await interaction.guild?.members.fetch(targetMemberInput.id);
 
-    if (targetMember.id === interaction.guild?.ownerId) {
-      await interaction.editReply("You can't ban that user because they're the server owner.");
-      return;
-    }
+  if (!targetMember) {
+    await interaction.editReply("That user doesn't exit in this server.");
+    return;
+  }
 
-    // Check role hierarchies
-    const targetMemberRolePosition = targetMember.roles.highest.position; // Highest role of the user
-    const requestMember = interaction.guild?.members.cache.get(interaction.user.id);
-    const requestMemberRolePosition = requestMember?.roles.highest.position ?? 0; // Highest role of user running this cmd
-    const botRolePosition = interaction.guild?.members.me?.roles.highest.position ?? 0; // Highest role of the bot
+  if (targetMember.id === interaction.guild?.ownerId) {
+    await interaction.editReply("You can't ban that user because they're the server owner.");
+    return;
+  }
 
-    if (targetMemberRolePosition >= requestMemberRolePosition) {
-      await interaction.editReply("You can't ban that user because they have the same/higher role than you.");
-      return;
-    }
+  // Check role hierarchies
+  const targetMemberRolePosition = targetMember.roles.highest.position; // Highest role of the user
+  const requestMember = interaction.guild?.members.cache.get(interaction.user.id);
+  const requestMemberRolePosition = requestMember?.roles.highest.position ?? 0; // Highest role of user running this cmd
+  const botRolePosition = interaction.guild?.members.me?.roles.highest.position ?? 0; // Highest role of the bot
 
-    if (targetMemberRolePosition >= botRolePosition) {
-      await interaction.editReply("I can't ban that user because they have the same/higher role than me.");
-      return;
-    }
+  if (targetMemberRolePosition >= requestMemberRolePosition) {
+    await interaction.editReply("You can't ban that user because they have the same/higher role than you.");
+    return;
+  }
 
-    // Ban the user
-    try {
-      await targetMember.ban({ reason });
-      await interaction.editReply(`${targetMemberInput} was banned from the server\nReason: ${reason}`)
+  if (targetMemberRolePosition >= botRolePosition) {
+    await interaction.editReply("I can't ban that user because they have the same/higher role than me.");
+    return;
+  }
 
-    } catch (error) {
-      console.error(`There was an error when banning: ${error}`);
-      await interaction.editReply("There was an error trying to ban this user.");
-    }
-  },
+  // Ban the user
+  try {
+    await targetMember.ban({ reason });
+    await interaction.editReply(`${targetMemberInput} was banned from the server\nReason: ${reason}`)
 
-  name: "ban",
-  description: "Bans a member from the server",
-  options: [
-    {
-      name: "member",
-      description: "The member to ban",
-      required: true,
-      type: ApplicationCommandOptionType.User,
-    },
-    {
-      name: "reason",
-      description: "The reason for banning",
-      type: ApplicationCommandOptionType.String,
-    }
-  ],
-  permissionsRequired: [
-    PermissionFlagsBits.BanMembers,
-  ],
-  botPermissions: [
-    PermissionFlagsBits.BanMembers,
-  ],
-};
+  } catch (error) {
+    console.error(`There was an error when banning: ${error}`);
+    await interaction.editReply("There was an error trying to ban this user.");
+  }
+}
+
+export default { 
+  data,
+  run,
+}

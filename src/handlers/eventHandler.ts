@@ -8,14 +8,14 @@ export default (client: Client) => {
   for (const eventFolder of eventFolders) {
     const eventFiles: string[] = getAllFiles(eventFolder);
     eventFiles.sort((a,b) => a.localeCompare(b));
-
-    const eventName: string | undefined = eventFolder.replace(/\\/g, '/').split("/").pop();
+    
+    const eventName: string | undefined = eventFolder.replace(/\\/g, '/').split("/").pop(); // Replace \ with / then pop the last element which is the last path
     
     client.on(eventName as any, async (...args: any[]) => {
       for (const eventFile of eventFiles) {
         const eventModule = require(eventFile);
         const eventFunction = eventModule.default || eventModule;
-
+        
         if (typeof eventFunction !== "function") {
           console.warn(`[EventHandler] File at ${eventFile} does not export a valid function.`);
           continue;

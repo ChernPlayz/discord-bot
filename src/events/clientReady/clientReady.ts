@@ -24,7 +24,7 @@ const status: BotStatus[] = [
 
 export default (client: Client): void => {
   console.log(`${client.user?.username} is online`);
-
+  
   setInterval(() => {
     let randomStatusIndex: number = Math.floor(Math.random() * status.length);
     let randomStatus: BotStatus = status[randomStatusIndex];
